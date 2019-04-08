@@ -1,6 +1,7 @@
 import numpy as np
 import matplotlib.pyplot as plt
 import scipy.signal as ssig
+import scipy.ndimage as snd
 import keras.datasets as kd
 import keras.models as km
 import keras.layers as kl
@@ -158,9 +159,41 @@ def main(argv):
     # initiate adam optimizer
     opt = keras.optimizers.adam(lr=0.001)
 
-    model.compile(loss='categorical_crossentropy', optimizer=opt, metrics=['accuracy'])
+    # model.compile(loss='categorical_crossentropy', optimizer=opt, metrics=['accuracy'])
 
-    model.fit(x_train, y_train, batch_size=64, epochs=10, validation_data=(x_test, y_test), shuffle=True)
+    # TODO: implement save / load routine for weights
+
+    # model.fit(x_train, y_train, batch_size=64, epochs=10, validation_data=(x_test, y_test), shuffle=True)
+
+    final_dense = model.get_layer(name='final_dense')
+    print(final_dense.get_weights()[0].shape)
+
+    new_model = copy_model(model)
+
+    # Note that keras expects a batch for predict: our batch here happens to be of size 1
+    idx = np.random.randint(0, len(x_train))
+    last_conv, probs = new_model.predict(x_train[idx].reshape((1, 32, 32, 3)))
+
+    # Display all 32 feature maps from the final convolutional layer.
+    fig, axs = plt.subplots(nrows=8, ncols=4, figsize=(8, 16))
+    for j, r in enumerate(axs):
+        for i, ax in enumerate(r):
+            ax.imshow(last_conv[0, :, :, 4 * j + i])
+
+    print('Probability of each class: ', probs)
+
+    # Make a prediction by taking the argmax of the probabilities
+    pred = np.argmax(probs)
+    print('This thing is a: ' + new_labels[pred])
+    plt.show()
+
+    fm_0 = last_conv[0, :, :, 0]
+    fm_0_upscaled = snd.zoom(fm_0, 4)
+    print(fm_0.shape, fm_0_upscaled.shape)
+
+    plt.imshow(x_train[idx])
+    plt.imshow(fm_0_upscaled, alpha=0.3, cmap='jet')
+
 
 
 if __name__ == '__main__':
