@@ -117,6 +117,14 @@ def build_model_orig(input_shape, output_shape):
     return model
 
 
+def copy_model(model):
+
+    bn_3 = model.get_layer(name='bn_3')
+    softmax = model.get_layer(name='softmax')
+
+    return km.Model(inputs=model.input, outputs=(bn_3.output, softmax.output))
+
+
 def main(argv):
 
     # Set to true to use random subset
